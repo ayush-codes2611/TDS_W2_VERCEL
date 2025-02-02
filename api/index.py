@@ -1,5 +1,5 @@
 import json
-from http.server import BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import urllib.parse
 
 # Load student data from the JSON file
@@ -9,7 +9,7 @@ def load_data():
     return data
 
 # Handler class to process incoming requests
-class handler(BaseHTTPRequestHandler):
+class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         # Parse the query parameters
         query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
@@ -36,3 +36,13 @@ class handler(BaseHTTPRequestHandler):
 
         # Send the JSON response
         self.wfile.write(json.dumps(result).encode('utf-8'))
+
+# Run the HTTP server
+def run(server_class=HTTPServer, handler_class=RequestHandler, port=8000):
+    server_address = ('', port)
+    httpd = server_class(server_address, handler_class)
+    print(f"Server running on port {port}...")
+    httpd.serve_forever()
+
+if __name__ == "__main__":
+    run()
