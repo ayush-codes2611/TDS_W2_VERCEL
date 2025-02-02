@@ -1,6 +1,9 @@
 import json
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import urllib.parse
+from fastapi import FastAPI
+from typing import Optional
+
+app = FastAPI()
 
 # Load student data from the JSON file
 def load_data():
@@ -8,41 +11,15 @@ def load_data():
         data = json.load(file)
     return data
 
-# Handler class to process incoming requests
-class RequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        # Parse the query parameters
-        query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+@app.get("/")
+def get_student(name: Optional[str] = None):
+    data = load_data()
 
-        # Get 'name' parameters from the query string
-        names = query.get('name', [])
+    result = {"marks": []}
+    if name:
+        for entry in data:
+            if entry["name"] == name:
+                result["marks"].append(entry["marks"])
 
-        # Load data from the JSON file
-        data = load_data()
+    return result
 
-        # Prepare the result dictionary
-        result = {"marks": []}
-        for name in names:
-            # Find the marks for each name
-            for entry in data:
-                if entry["name"] == name:
-                    result["marks"].append(entry["marks"])
-
-        # Send the response header
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')  # Enable CORS for any origin
-        self.end_headers()
-
-        # Send the JSON response
-        self.wfile.write(json.dumps(result).encode('utf-8'))
-
-# Run the HTTP server
-def run(server_class=HTTPServer, handler_class=RequestHandler, port=8000):
-    server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
-    print(f"Server running on port {port}...")
-    httpd.serve_forever()
-
-if __name__ == "__main__":
-    run()
